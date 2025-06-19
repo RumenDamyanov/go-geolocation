@@ -1,0 +1,10 @@
+default_language: en
+country_to_language_map:
+  BG: [bg]
+  DE: [de]
+  FR: [fr]
+  US: [en]
+  CA: [en, fr]
+  BE: [nl, fr, de]
+  CH: [de, fr, it, rm]
+cookie_name: geo_lang

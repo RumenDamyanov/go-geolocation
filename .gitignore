@@ -1,0 +1,29 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Output of coverage tools
+*.coverprofile
+coverage.out
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Dependency directories
+vendor/
+
+# Test temp files
+*.tmp
+*.temp
