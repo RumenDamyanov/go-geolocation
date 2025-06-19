@@ -1,7 +1,7 @@
 # go-geolocation
 
 [![CI](https://github.com/rumendamyanov/go-geolocation/actions/workflows/ci.yml/badge.svg)](https://github.com/rumendamyanov/go-geolocation/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/rumendamyanov/go-geolocation/branch/main/graph/badge.svg)](https://codecov.io/gh/rumendamyanov/go-geolocation)
+[![codecov](https://codecov.io/gh/rumendamyanov/go-geolocation/branch/master/graph/badge.svg)](https://codecov.io/gh/rumendamyanov/go-geolocation)
 
 A framework-agnostic Go module for geolocation, inspired by php-geolocation. Provides core geolocation features and adapters for popular Go web frameworks.
 
