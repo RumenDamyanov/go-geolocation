@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/mssola/user_agent"
@@ -24,13 +25,32 @@ type ClientInfo struct {
 	BrowserName    string // e.g., Chrome, Firefox
 	BrowserVersion string // e.g., 123.0.0.0
 	OS             string // e.g., Windows NT 10.0
-	Device         string // e.g., Mobile, Desktop
+	Device         string // e.g., Mobile, Desktop, Tablet
 }
 
 // LanguageInfo holds the user's preferred and supported languages from Accept-Language.
 type LanguageInfo struct {
 	Default   string   // The default (first) language
 	Supported []string // All languages in order of preference
+}
+
+// Resolution holds screen resolution information.
+type Resolution struct {
+	Width  int // Screen width in pixels
+	Height int // Screen height in pixels
+}
+
+// GeoInfo holds all geolocation and client information.
+type GeoInfo struct {
+	CountryCode       string     `json:"country_code"`
+	IP                string     `json:"ip"`
+	PreferredLanguage string     `json:"preferred_language"`
+	AllLanguages      []string   `json:"all_languages"`
+	OS                string     `json:"os"`
+	Browser           string     `json:"browser"`
+	BrowserVersion    string     `json:"browser_version"`
+	Device            string     `json:"device"`
+	Resolution        Resolution `json:"resolution"`
 }
 
 // Config holds module configuration, including country-to-language mapping, defaults, and cookie name.
@@ -63,8 +83,12 @@ func ParseClientInfo(r *http.Request) *ClientInfo {
 	ua := user_agent.New(r.UserAgent())
 	name, version := ua.Browser()
 	device := "Desktop"
+	userAgent := r.UserAgent()
 	if ua.Mobile() {
 		device = "Mobile"
+	} else if strings.Contains(strings.ToLower(userAgent), "ipad") ||
+		strings.Contains(strings.ToLower(userAgent), "tablet") {
+		device = "Tablet"
 	}
 	return &ClientInfo{
 		BrowserName:    name,
@@ -181,4 +205,165 @@ func SetCookie(w http.ResponseWriter, name, value string, opts *http.Cookie) {
 		cookie.SameSite = opts.SameSite
 	}
 	http.SetCookie(w, cookie)
+}
+
+// GetResolution retrieves screen resolution from custom headers (if set by frontend JS).
+func GetResolution(r *http.Request) Resolution {
+	width := 0
+	height := 0
+	if w := r.Header.Get("X-Screen-Width"); w != "" {
+		if parsed, err := strconv.Atoi(w); err == nil {
+			width = parsed
+		}
+	}
+	if h := r.Header.Get("X-Screen-Height"); h != "" {
+		if parsed, err := strconv.Atoi(h); err == nil {
+			height = parsed
+		}
+	}
+	return Resolution{Width: width, Height: height}
+}
+
+// GetGeoInfo returns all geolocation and client information in a single struct.
+//
+// Example:
+//
+//	info := geolocation.GetGeoInfo(r)
+//	fmt.Printf("Country: %s, Browser: %s, Device: %s", info.CountryCode, info.Browser, info.Device)
+func GetGeoInfo(r *http.Request) *GeoInfo {
+	loc := FromRequest(r)
+	client := ParseClientInfo(r)
+	lang := ParseLanguageInfo(r)
+	resolution := GetResolution(r)
+
+	return &GeoInfo{
+		CountryCode:       loc.Country,
+		IP:                loc.IP,
+		PreferredLanguage: lang.Default,
+		AllLanguages:      lang.Supported,
+		OS:                client.OS,
+		Browser:           client.BrowserName,
+		BrowserVersion:    client.BrowserVersion,
+		Device:            client.Device,
+		Resolution:        resolution,
+	}
+}
+
+// GetLanguageForCountry returns the best language for a given country code,
+// considering browser languages and available site languages.
+//
+// Logic:
+// 1. If browser preferred language matches a country language and is available, use it
+// 2. Check all browser languages for a match with available languages
+// 3. Use the first country language as fallback
+// 4. Returns empty string if no match found
+func GetLanguageForCountry(r *http.Request, cfg *Config, countryCode string, availableSiteLanguages []string) string {
+	if cfg == nil || countryCode == "" {
+		return ""
+	}
+
+	// Check if country is actually mapped
+	countryKey := strings.ToUpper(countryCode)
+	_, exists := cfg.CountryToLanguageMap[countryKey]
+	if !exists {
+		return ""
+	}
+
+	langs := cfg.ActiveLanguages(countryKey)
+	if len(langs) == 0 {
+		return ""
+	}
+
+	langInfo := ParseLanguageInfo(r)
+
+	if len(availableSiteLanguages) > 0 {
+		// 1. Check preferred language
+		if langInfo.Default != "" {
+			preferredShort := getLanguageCode(langInfo.Default)
+			if contains(langs, preferredShort) && contains(availableSiteLanguages, preferredShort) {
+				return preferredShort
+			}
+		}
+
+		// 2. Check all browser languages
+		for _, browserLang := range langInfo.Supported {
+			langCode := getLanguageCode(browserLang)
+			if contains(langs, langCode) && contains(availableSiteLanguages, langCode) {
+				return langCode
+			}
+		}
+
+		// 3. Fallback: first country language that is available
+		for _, lang := range langs {
+			if contains(availableSiteLanguages, lang) {
+				return lang
+			}
+		}
+		return ""
+	}
+
+	// If no availableSiteLanguages provided, return first country language
+	if len(langs) > 0 {
+		return langs[0]
+	}
+	return ""
+}
+
+// ShouldSetLanguage returns true if the language cookie should be set (i.e., if no language cookie exists).
+func ShouldSetLanguage(r *http.Request, cookieName string) bool {
+	cookie := GetCookie(r, cookieName)
+	return cookie == ""
+}
+
+// IsLocalDevelopment checks if we're in a local development environment.
+// Returns true for localhost, local IPs, or missing Cloudflare headers.
+func IsLocalDevelopment(r *http.Request) bool {
+	loc := FromRequest(r)
+	ip := loc.IP
+	host := r.Host
+
+	// Check for localhost, local IPs, or missing Cloudflare headers
+	return ip == "" ||
+		ip == "127.0.0.1" ||
+		ip == "::1" ||
+		strings.HasPrefix(ip, "192.168.") ||
+		strings.HasPrefix(ip, "10.") ||
+		strings.HasPrefix(ip, "172.16.") ||
+		strings.Contains(host, "localhost") ||
+		strings.Contains(host, ".local") ||
+		r.Header.Get("CF-IPCountry") == ""
+}
+
+// Simulate creates a geolocation-enabled HTTP request with simulated Cloudflare headers
+// for local development and testing.
+//
+// Example:
+//
+//	req := geolocation.Simulate("DE", &geolocation.SimulationOptions{
+//		UserAgent: "Custom Test Agent",
+//	})
+//	info := geolocation.GetGeoInfo(req)
+func Simulate(countryCode string, options *SimulationOptions) *http.Request {
+	return SimulateRequest(countryCode, options)
+}
+
+// Helper functions
+
+// getLanguageCode extracts the language code from a locale string (e.g., "en-US" -> "en")
+func getLanguageCode(locale string) string {
+	parts := strings.Split(locale, "-")
+	if len(parts) > 0 {
+		return strings.ToLower(parts[0])
+	}
+	return locale
+}
+
+// contains checks if a slice contains a specific string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }
