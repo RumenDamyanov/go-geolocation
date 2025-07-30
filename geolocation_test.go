@@ -261,3 +261,178 @@ func TestLoadConfig_InvalidYML(t *testing.T) {
 		t.Error("expected error for invalid YML")
 	}
 }
+
+func TestLoadConfig_UnsupportedFormat(t *testing.T) {
+	f, err := os.CreateTemp("", "config-*.txt")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(f.Name())
+	f.WriteString("some content")
+	f.Close()
+	_, err = LoadConfig(f.Name())
+	if err == nil {
+		t.Error("expected error for unsupported file format")
+	}
+	expectedError := "unsupported config file format"
+	if err.Error() != expectedError {
+		t.Errorf("expected error %q, got %q", expectedError, err.Error())
+	}
+}
+
+func TestActiveLanguage_EdgeCases(t *testing.T) {
+	// Test case where ActiveLanguages returns empty slice
+	cfg := &Config{
+		DefaultLanguage: "en",
+		CountryToLanguageMap: map[string][]string{
+			"XX": {}, // Empty slice
+		},
+	}
+
+	lang := cfg.ActiveLanguage("XX")
+	if lang != "en" {
+		t.Errorf("expected default language 'en', got %q", lang)
+	}
+
+	// Test case where config has no default language and ActiveLanguages returns empty
+	emptyConfig := &Config{
+		CountryToLanguageMap: map[string][]string{},
+	}
+	// This should hit the fallback case where len(langs) == 0
+	lang = emptyConfig.ActiveLanguage("UNKNOWN")
+	if lang != "" {
+		t.Errorf("expected empty string when no default language set, got %q", lang)
+	}
+
+	// Test case with nil config
+	var nilCfg *Config
+	defer func() {
+		if r := recover(); r != nil {
+			// This is expected behavior - should panic with nil config
+		}
+	}()
+	nilCfg.ActiveLanguage("US") // This might panic
+}
+
+func TestGetLanguageCode_EdgeCases(t *testing.T) {
+	// Test empty string
+	result := getLanguageCode("")
+	if result != "" {
+		t.Errorf("expected empty string, got %q", result)
+	}
+
+	// Test string without dash
+	result = getLanguageCode("en")
+	if result != "en" {
+		t.Errorf("expected 'en', got %q", result)
+	}
+
+	// Test string with multiple dashes
+	result = getLanguageCode("zh-Hans-CN")
+	if result != "zh" {
+		t.Errorf("expected 'zh', got %q", result)
+	}
+
+	// Test edge case with only dash
+	result = getLanguageCode("-")
+	if result != "" {
+		t.Errorf("expected empty string for single dash, got %q", result)
+	}
+
+	// Test edge case starting with dash
+	result = getLanguageCode("-en")
+	if result != "" {
+		t.Errorf("expected empty string when starting with dash, got %q", result)
+	}
+}
+
+func TestGetLanguageForCountry_EdgeCases(t *testing.T) {
+	// Test with nil config
+	result := GetLanguageForCountry(httptest.NewRequest("GET", "/", nil), nil, "US", []string{"en"})
+	if result != "" {
+		t.Errorf("expected empty string with nil config, got %q", result)
+	}
+
+	// Test with empty country code
+	cfg := &Config{
+		DefaultLanguage: "en",
+		CountryToLanguageMap: map[string][]string{
+			"US": {"en"},
+		},
+	}
+	result = GetLanguageForCountry(httptest.NewRequest("GET", "/", nil), cfg, "", []string{"en"})
+	if result != "" {
+		t.Errorf("expected empty string with empty country code, got %q", result)
+	}
+
+	// Test with unmapped country
+	result = GetLanguageForCountry(httptest.NewRequest("GET", "/", nil), cfg, "ZZ", []string{"en"})
+	if result != "" {
+		t.Errorf("expected empty string with unmapped country, got %q", result)
+	}
+
+	// Test with empty language list for country - this actually returns the default language
+	cfg.CountryToLanguageMap["XX"] = []string{}
+	cfg.DefaultLanguage = "en"
+	result = GetLanguageForCountry(httptest.NewRequest("GET", "/", nil), cfg, "XX", []string{"en"})
+	if result != "en" {
+		t.Errorf("expected 'en' as default language with empty language list, got %q", result)
+	}
+
+	// Test without available site languages (should return first country language)
+	cfg.CountryToLanguageMap["FR"] = []string{"fr", "en"}
+	req := httptest.NewRequest("GET", "/", nil)
+	result = GetLanguageForCountry(req, cfg, "FR", nil)
+	if result != "fr" {
+		t.Errorf("expected 'fr' without available site languages, got %q", result)
+	}
+
+	// Test complex scenario with multiple languages but no matches in available site languages
+	cfg.CountryToLanguageMap["DE"] = []string{"de", "en"}
+	req = httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept-Language", "es,fr;q=0.9")
+	result = GetLanguageForCountry(req, cfg, "DE", []string{"it", "pt"})
+	if result != "" {
+		t.Errorf("expected empty string when no country languages match available site languages, got %q", result)
+	}
+}
+
+func TestGetLanguageForCountry_AdditionalCoverage(t *testing.T) {
+	cfg := &Config{
+		DefaultLanguage: "en",
+		CountryToLanguageMap: map[string][]string{
+			"US": {"en"},
+			"FR": {"fr", "en"},
+		},
+	}
+
+	// Test case where browser language matches but not in available site languages
+	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept-Language", "en")
+	result := GetLanguageForCountry(req, cfg, "US", []string{"fr", "de"})
+	if result != "" {
+		t.Errorf("expected empty string when browser language not in available site languages, got %q", result)
+	}
+
+	// Test case with preferred language match
+	req = httptest.NewRequest("GET", "/", nil)
+	req.Header.Set("Accept-Language", "en-US,fr;q=0.9")
+	result = GetLanguageForCountry(req, cfg, "US", []string{"en", "fr"})
+	if result != "en" {
+		t.Errorf("expected 'en' for preferred language match, got %q", result)
+	}
+}
+
+func TestGetLanguageCode_AdditionalEdgeCases(t *testing.T) {
+	// Test edge case with only dash
+	result := getLanguageCode("-")
+	if result != "" {
+		t.Errorf("expected empty string for single dash, got %q", result)
+	}
+
+	// Test edge case starting with dash
+	result = getLanguageCode("-en")
+	if result != "" {
+		t.Errorf("expected empty string when starting with dash, got %q", result)
+	}
+}

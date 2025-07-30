@@ -72,17 +72,106 @@ func TestRandomCountry(t *testing.T) {
 	}
 }
 
-func TestSimulateRequest(t *testing.T) {
-	req := SimulateRequest("JP", nil)
+func TestFakeCloudflareHeaders_EdgeCases(t *testing.T) {
+	// Test with empty country
+	headers := FakeCloudflareHeaders("", nil)
 
-	if req.Header.Get("CF-IPCountry") != "JP" {
-		t.Errorf("expected CF-IPCountry to be 'JP', got '%s'", req.Header.Get("CF-IPCountry"))
+	// Function sets the countryCode as provided, but uses US data
+	if headers["CF-IPCountry"] != "" {
+		t.Errorf("expected empty string for CF-IPCountry with empty country, got %q", headers["CF-IPCountry"])
 	}
-	if req.Header.Get("CF-Connecting-IP") == "" {
-		t.Error("expected CF-Connecting-IP to be set")
+	// Should use US IP ranges as fallback
+	if !strings.HasPrefix(headers["CF-Connecting-IP"], "192.168.1.") {
+		t.Errorf("expected US IP range fallback, got %q", headers["CF-Connecting-IP"])
 	}
-	if req.Header.Get("User-Agent") == "" {
-		t.Error("expected User-Agent to be set")
+
+	// Test with whitespace-only country
+	headers = FakeCloudflareHeaders("  ", nil)
+
+	// Function converts to uppercase but retains whitespace
+	if headers["CF-IPCountry"] != "  " {
+		t.Errorf("expected whitespace preserved for CF-IPCountry, got %q", headers["CF-IPCountry"])
+	}
+
+	// Test with non-existent country
+	headers = FakeCloudflareHeaders("XX", nil)
+
+	// Function returns XX as country but uses US data as fallback
+	if headers["CF-IPCountry"] != "XX" {
+		t.Errorf("expected 'XX' for CF-IPCountry, got %q", headers["CF-IPCountry"])
+	}
+	// Should use US IP ranges as fallback
+	if !strings.HasPrefix(headers["CF-Connecting-IP"], "192.168.1.") {
+		t.Errorf("expected US IP range fallback for non-existent country, got %q", headers["CF-Connecting-IP"])
+	}
+
+	// Test with custom simulation options
+	options := &SimulationOptions{
+		UserAgent:  "Custom Agent",
+		ServerName: "test.example.com",
+		IPRange:    "203.0.113.",
+		Languages:  []string{"es", "en"},
+	}
+	headers = FakeCloudflareHeaders("US", options)
+
+	if headers["User-Agent"] != "Custom Agent" {
+		t.Errorf("expected custom user agent, got %q", headers["User-Agent"])
+	}
+	if headers["Server-Name"] != "test.example.com" {
+		t.Errorf("expected custom server name, got %q", headers["Server-Name"])
+	}
+	if !strings.HasPrefix(headers["CF-Connecting-IP"], "203.0.113.") {
+		t.Errorf("expected IP with custom range, got %q", headers["CF-Connecting-IP"])
+	}
+	if !strings.Contains(headers["Accept-Language"], "es") {
+		t.Errorf("expected custom languages in Accept-Language, got %q", headers["Accept-Language"])
+	}
+}
+
+func TestSimulateRequest_EdgeCases(t *testing.T) {
+	// Test with empty country (should fallback to US)
+	req := SimulateRequest("", nil)
+
+	if req.Header.Get("CF-IPCountry") != "" {
+		t.Errorf("expected empty string for CF-IPCountry with empty country, got %q", req.Header.Get("CF-IPCountry"))
+	}
+
+	// Test with non-existent country code
+	req = SimulateRequest("XX", nil)
+
+	// Should return XX as country but use US data as fallback
+	if req.Header.Get("CF-IPCountry") != "XX" {
+		t.Errorf("expected 'XX' for CF-IPCountry, got %q", req.Header.Get("CF-IPCountry"))
+	}
+
+	// Test with custom options that include server name (triggers default case)
+	options := &SimulationOptions{
+		UserAgent:  "Test Agent",
+		ServerName: "test.example.com",
+		Languages:  []string{"de", "en"},
+	}
+	req = SimulateRequest("DE", options)
+
+	if req.Header.Get("User-Agent") != "Test Agent" {
+		t.Errorf("expected custom user agent, got %q", req.Header.Get("User-Agent"))
+	}
+	if req.Header.Get("CF-IPCountry") != "DE" {
+		t.Errorf("expected 'DE', got %q", req.Header.Get("CF-IPCountry"))
+	}
+	// This should trigger the default case in the switch statement
+	if req.Header.Get("Server-Name") != "test.example.com" {
+		t.Errorf("expected Server-Name header to be set via default case, got %q", req.Header.Get("Server-Name"))
+	}
+	if req.Header.Get("HTTP_HOST") != "test.example.com" {
+		t.Errorf("expected HTTP_HOST header to be set via default case, got %q", req.Header.Get("HTTP_HOST"))
+	}
+
+	// Verify all expected headers are set
+	expectedHeaders := []string{"CF-IPCountry", "CF-Connecting-IP", "CF-Ray", "Accept-Language", "User-Agent", "X-Forwarded-For"}
+	for _, header := range expectedHeaders {
+		if req.Header.Get(header) == "" {
+			t.Errorf("expected header %q to be set", header)
+		}
 	}
 }
 
