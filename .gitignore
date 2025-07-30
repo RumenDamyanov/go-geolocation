@@ -27,3 +27,8 @@ vendor/
 # Test temp files
 *.tmp
 *.temp
+
+# coverage reports
+coverage/
+coverage.out
+coverage.html
