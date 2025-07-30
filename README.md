@@ -3,12 +3,17 @@
 [![CI](https://github.com/rumendamyanov/go-geolocation/actions/workflows/ci.yml/badge.svg)](https://github.com/rumendamyanov/go-geolocation/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/rumendamyanov/go-geolocation/branch/master/graph/badge.svg)](https://codecov.io/gh/rumendamyanov/go-geolocation)
 
-A framework-agnostic Go module for geolocation, inspired by php-geolocation. Provides core geolocation features and adapters for popular Go web frameworks.
+A framework-agnostic Go module for geolocation, inspired by [php-geolocation](https://github.com/RumenDamyanov/php-geolocation). Provides core geolocation features and adapters for popular Go web frameworks.
 
 ## Features
 
 - Extracts country from Cloudflare headers
 - Parses browser, OS, device, and language from standard headers
+- **Local development simulation** - Fake Cloudflare headers for testing without production setup
+- **Auto-detection** of local environments (localhost, local IPs, missing Cloudflare headers)
+- **Advanced language negotiation** - matches browser and available site languages for multi-language countries
+- **Comprehensive client info** - browser, OS, device type (including tablet), screen resolution
+- **Built-in country data** for 8 countries (US, CA, GB, DE, FR, JP, AU, BR)
 - Middleware/adapters for net/http, Gin, Echo, Fiber
 - Testable, modular design
 - High test coverage and CI integration
@@ -50,7 +55,7 @@ See: [examples/fiber.go](examples/fiber.go)
 
 ## Example Output
 
-```
+```text
 IP: 1.2.3.4
 Country: BG
 Browser: Chrome 123.0.0.0
@@ -58,6 +63,98 @@ OS: Windows NT 10.0
 Device: Desktop
 DefaultLang: en-US
 AllLangs: [en-US en bg de]
+```
+
+## Local Development Simulation
+
+When developing locally where Cloudflare is not available, you can simulate its functionality:
+
+### Quick Simulation
+
+```go
+// Create a simulated request for a specific country
+req := geolocation.Simulate("DE", nil)
+info := geolocation.GetGeoInfo(req)
+fmt.Printf("Country: %s, IP: %s\n", info.CountryCode, info.IP)
+```
+
+### Advanced Simulation
+
+```go
+// Custom simulation options
+req := geolocation.Simulate("JP", &geolocation.SimulationOptions{
+    UserAgent: "Custom User Agent",
+    Languages: []string{"ja", "en"},
+})
+```
+
+### Auto-Detection of Local Environment
+
+```go
+req := getRequest() // your HTTP request
+if geolocation.IsLocalDevelopment(req) {
+    fmt.Println("Running in local development mode")
+}
+```
+
+### Available Countries for Simulation
+
+```go
+countries := geolocation.GetAvailableCountries()
+// Returns: ["US", "CA", "GB", "DE", "FR", "JP", "AU", "BR"]
+
+randomCountry := geolocation.RandomCountry()
+```
+
+## Advanced Features
+
+### Comprehensive Client Information
+
+```go
+info := geolocation.GetGeoInfo(req)
+fmt.Printf("Country: %s\n", info.CountryCode)
+fmt.Printf("IP: %s\n", info.IP)
+fmt.Printf("Browser: %s %s\n", info.Browser, info.BrowserVersion)
+fmt.Printf("OS: %s\n", info.OS)
+fmt.Printf("Device: %s\n", info.Device) // Desktop, Mobile, Tablet
+fmt.Printf("Languages: %v\n", info.AllLanguages)
+fmt.Printf("Resolution: %dx%d\n", info.Resolution.Width, info.Resolution.Height)
+```
+
+### Advanced Language Negotiation
+
+```go
+cfg := &geolocation.Config{
+    DefaultLanguage: "en",
+    CountryToLanguageMap: map[string][]string{
+        "CA": {"en", "fr"}, // Canada: English (default), French
+        "CH": {"de", "fr", "it"}, // Switzerland: German, French, Italian
+    },
+}
+
+// Sophisticated language selection based on:
+// 1. Browser preferred language matching country languages and available site languages
+// 2. All browser languages for matches with available languages
+// 3. First country language as fallback
+availableSiteLanguages := []string{"en", "fr", "de", "es"}
+bestLang := geolocation.GetLanguageForCountry(req, cfg, "CH", availableSiteLanguages)
+
+// Check if language cookie should be set
+if geolocation.ShouldSetLanguage(req, "lang") {
+    // Set language in your application
+    geolocation.SetCookie(w, "lang", bestLang, &http.Cookie{MaxAge: 86400 * 30})
+}
+```
+
+### Screen Resolution Detection
+
+```go
+// Frontend JavaScript would set these headers:
+// req.Header.Set("X-Screen-Width", "1920")
+// req.Header.Set("X-Screen-Height", "1080")
+
+resolution := geolocation.GetResolution(req)
+fmt.Printf("Screen: %dx%d\n", resolution.Width, resolution.Height)
 ```
 
 ## Testing
@@ -162,3 +259,27 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(resp)
 }
 ```
+
+## Documentation
+
+For comprehensive documentation and additional examples:
+
+- **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute to this project
+- **[Security Policy](SECURITY.md)** - Security guidelines and vulnerability reporting
+- **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community guidelines and behavior expectations
+- **[Funding](FUNDING.md)** - Support and sponsorship information
+- **[Wiki](https://github.com/RumenDamyanov/go-geolocation/wiki)** - Extended examples and tutorials
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on how to submit pull requests, report issues, and contribute to the project.
+
+## Support
+
+If you find this project helpful, please consider:
+
+- ⭐ Starring the repository
+- 📝 Reporting issues or suggesting features
+- 💝 Supporting via [GitHub Sponsors](FUNDING.md)
+
+For detailed support information, see [FUNDING.md](FUNDING.md).
