@@ -1,7 +1,12 @@
 # go-geolocation
 
 [![CI](https://github.com/rumendamyanov/go-geolocation/actions/workflows/ci.yml/badge.svg)](https://github.com/rumendamyanov/go-geolocation/actions/workflows/ci.yml)
+![CodeQL](https://github.com/rumendamyanov/go-geolocation/actions/workflows/github-code-scanning/codeql/badge.svg)
+![Dependabot](https://github.com/rumendamyanov/go-geolocation/actions/workflows/dependabot/dependabot-updates/badge.svg)
 [![codecov](https://codecov.io/gh/rumendamyanov/go-geolocation/branch/master/graph/badge.svg)](https://codecov.io/gh/rumendamyanov/go-geolocation)
+[![Go Report Card](https://goreportcard.com/badge/github.com/rumendamyanov/go-geolocation?)](https://goreportcard.com/report/github.com/rumendamyanov/go-geolocation)
+[![Go Reference](https://pkg.go.dev/badge/github.com/rumendamyanov/go-geolocation.svg)](https://pkg.go.dev/github.com/rumendamyanov/go-geolocation)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/rumendamyanov/go-geolocation/blob/master/LICENSE.md)
 
 A framework-agnostic Go module for geolocation, inspired by [php-geolocation](https://github.com/RumenDamyanov/php-geolocation). Provides core geolocation features and adapters for popular Go web frameworks.
 
