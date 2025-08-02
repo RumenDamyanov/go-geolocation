@@ -42,21 +42,219 @@ client := geolocation.ParseClientInfo(r)
 languages := geolocation.ParseLanguageInfo(r)
 ```
 
-### net/http Example
+## Framework Adapters
 
-See: [examples/nethttp.go](examples/nethttp.go)
+Ready-to-use examples for popular Go web frameworks are available in the [examples/](examples/) directory:
+
+| Framework | Port | Adapter Path | Description |
+|-----------|------|--------------|-------------|
+| **net/http** | 8080 | [adapters/nethttp](adapters/nethttp) | Standard library HTTP server integration |
+| **Gin** | 8081 | [adapters/gin](adapters/gin) | Gin web framework integration |
+| **Echo** | 8082 | [adapters/echo](adapters/echo) | Echo web framework integration |
+| **Fiber** | 8083 | [adapters/fiber](adapters/fiber) | Fiber web framework integration |
+
+### Two Integration Approaches
+
+1. **Import Adapter Packages** — For clean middleware integration:
+
+```go
+go get github.com/rumendamyanov/go-geolocation/adapters/gin    # or echo, fiber, nethttp
+```
+
+1. **Copy Example Applications** — For quick start with full applications:
+
+```bash
+# Clone and run complete example servers
+git clone https://github.com/rumendamyanov/go-geolocation.git
+cd go-geolocation/examples/gin-adapter && go run main.go
+```
+
+### Quick Start with Framework Examples
+
+```bash
+# Clone the repository
+git clone https://github.com/rumendamyanov/go-geolocation.git
+cd go-geolocation
+
+# Run net/http example (port 8080)
+cd examples/nethttp-adapter && go run main.go
+
+# Run Gin example (port 8081)
+cd examples/gin-adapter && go run main.go
+
+# Run Echo example (port 8082)
+cd examples/echo-adapter && go run main.go
+
+# Run Fiber example (port 8083)
+cd examples/fiber-adapter && go run main.go
+```
+
+### Test the Examples
+
+```bash
+# Download geolocation data
+curl "http://localhost:8080/" | jq
+
+# Simulate a specific country
+curl "http://localhost:8081/simulate/DE" | jq
+
+# Get available countries
+curl "http://localhost:8082/countries" | jq
+```
+
+### Integration Pattern Example
+
+Each framework adapter follows the same pattern:
+
+```go
+package main
+
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/rumendamyanov/go-geolocation"
+    ginadapter "github.com/rumendamyanov/go-geolocation/adapters/gin"
+)
+
+func main() {
+    r := gin.Default()
+    r.Use(ginadapter.Middleware())
+
+    r.GET("/location", func(c *gin.Context) {
+        loc := ginadapter.FromContext(c)
+        clientInfo := geolocation.ParseClientInfo(c.Request)
+
+        c.JSON(200, gin.H{
+            "location": loc,
+            "client":   clientInfo,
+        })
+    })
+
+    r.Run(":8080")
+}
+```
 
 ### Gin Example
 
-See: [examples/gin.go](examples/gin.go)
+```go
+package main
+
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/rumendamyanov/go-geolocation"
+    ginadapter "github.com/rumendamyanov/go-geolocation/adapters/gin"
+)
+
+func main() {
+    r := gin.Default()
+    r.Use(ginadapter.Middleware())
+
+    r.GET("/user/:name", func(c *gin.Context) {
+        name := c.Param("name")
+        loc := ginadapter.FromContext(c)
+
+        c.JSON(200, gin.H{
+            "user":     name,
+            "location": loc,
+            "local":    geolocation.IsLocalDevelopment(c.Request),
+        })
+    })
+
+    r.Run(":8080")
+}
+```
 
 ### Echo Example
 
-See: [examples/echo.go](examples/echo.go)
+```go
+package main
+
+import (
+    "github.com/labstack/echo/v4"
+    "github.com/rumendamyanov/go-geolocation"
+    echoadapter "github.com/rumendamyanov/go-geolocation/adapters/echo"
+)
+
+func main() {
+    e := echo.New()
+    e.Use(echoadapter.Middleware())
+
+    e.GET("/user/:name", func(c echo.Context) error {
+        name := c.Param("name")
+        loc := echoadapter.FromContext(c)
+
+        return c.JSON(200, map[string]interface{}{
+            "user":     name,
+            "location": loc,
+            "local":    geolocation.IsLocalDevelopment(c.Request()),
+        })
+    })
+
+    e.Start(":8080")
+}
+```
 
 ### Fiber Example
 
-See: [examples/fiber.go](examples/fiber.go)
+```go
+package main
+
+import (
+    "github.com/gofiber/fiber/v2"
+    fiberadapter "github.com/rumendamyanov/go-geolocation/adapters/fiber"
+)
+
+func main() {
+    app := fiber.New()
+    app.Use(fiberadapter.Middleware())
+
+    app.Get("/user/:name", func(c *fiber.Ctx) error {
+        name := c.Params("name")
+        loc := fiberadapter.FromContext(c)
+
+        return c.JSON(fiber.Map{
+            "user":     name,
+            "location": loc,
+            "local":    loc.IP == "",
+        })
+    })
+
+    app.Listen(":8080")
+}
+```
+
+### net/http Example
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "net/http"
+    "github.com/rumendamyanov/go-geolocation"
+    httpadapter "github.com/rumendamyanov/go-geolocation/adapters/nethttp"
+)
+
+func main() {
+    mux := http.NewServeMux()
+
+    mux.Handle("/user", httpadapter.HTTPMiddleware(http.HandlerFunc(
+        func(w http.ResponseWriter, r *http.Request) {
+            loc := httpadapter.FromContext(r.Context())
+            clientInfo := geolocation.ParseClientInfo(r)
+
+            response := map[string]interface{}{
+                "location": loc,
+                "client":   clientInfo,
+                "local":    geolocation.IsLocalDevelopment(r),
+            }
+
+            w.Header().Set("Content-Type", "application/json")
+            json.NewEncoder(w).Encode(response)
+        })))
+
+    http.ListenAndServe(":8080", mux)
+}
+```
 
 ## Example Output
 

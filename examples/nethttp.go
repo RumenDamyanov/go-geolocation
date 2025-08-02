@@ -6,46 +6,85 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"time"
+	"strings"
 
 	"github.com/rumendamyanov/go-geolocation"
+	httpadapter "github.com/rumendamyanov/go-geolocation/adapters/nethttp"
 )
 
-var cfg *geolocation.Config
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	loc := geolocation.FromRequest(r)
-	info := geolocation.ParseClientInfo(r)
-	lang := geolocation.ParseLanguageInfo(r)
-	activeLangs := cfg.ActiveLanguages(loc.Country)
-
-	// Check for existing cookie
-	cookieVal := geolocation.GetCookie(r, cfg.CookieName)
-	if cookieVal == "" {
-		// Set cookie to first active language if not present
-		geolocation.SetCookie(w, cfg.CookieName, activeLangs[0], &http.Cookie{
-			Path:     "/",
-			MaxAge:   86400 * 30, // 30 days
-			HttpOnly: true,
-			Expires:  time.Now().Add(30 * 24 * time.Hour),
-		})
-		cookieVal = activeLangs[0]
-	}
-
-	fmt.Fprintf(w, "IP: %s\nCountry: %s\nActiveLangs: %v\nCookie: %s=%s\nBrowser: %s %s\nOS: %s\nDevice: %s\nDefaultLang: %s\nAllLangs: %v\n",
-		loc.IP, loc.Country, activeLangs, cfg.CookieName, cookieVal, info.BrowserName, info.BrowserVersion, info.OS, info.Device, lang.Default, lang.Supported)
-}
-
 func main() {
-	var err error
-	cfg, err = geolocation.LoadConfig("examples/config.yaml") // or config.json
-	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
-	}
-	http.HandleFunc("/", handler)
-	log.Println("Listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("🌍 Starting net/http Geolocation Example Server on :8080")
+	fmt.Println("📡 Try: curl http://localhost:8080/")
+	fmt.Println("🔧 Or simulate a country: curl http://localhost:8080/simulate/US")
+
+	mux := http.NewServeMux()
+
+	// Basic geolocation endpoint with middleware
+	mux.Handle("/", httpadapter.HTTPMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		loc := httpadapter.FromContext(r.Context())
+		if loc == nil {
+			http.Error(w, `{"error": "geolocation not available"}`, http.StatusInternalServerError)
+			return
+		}
+
+		// Get additional client info
+		clientInfo := geolocation.ParseClientInfo(r)
+		langInfo := geolocation.ParseLanguageInfo(r)
+
+		response := map[string]interface{}{
+			"location":    loc,
+			"client_info": clientInfo,
+			"language":    langInfo,
+			"is_local":    geolocation.IsLocalDevelopment(r),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	})))
+
+	// Simulation endpoint
+	mux.HandleFunc("/simulate/", func(w http.ResponseWriter, r *http.Request) {
+		country := strings.TrimPrefix(r.URL.Path, "/simulate/")
+		if country == "" {
+			http.Error(w, `{"error": "country parameter required"}`, http.StatusBadRequest)
+			return
+		}
+
+		// Create simulated request
+		simulated := geolocation.SimulateRequest(country, nil)
+
+		// Extract geolocation info from simulated request
+		loc := geolocation.FromRequest(simulated)
+		clientInfo := geolocation.ParseClientInfo(simulated)
+		langInfo := geolocation.ParseLanguageInfo(simulated)
+
+		response := map[string]interface{}{
+			"simulated":   true,
+			"country":     country,
+			"location":    loc,
+			"client_info": clientInfo,
+			"language":    langInfo,
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	})
+
+	// Available countries for simulation
+	mux.HandleFunc("/countries", func(w http.ResponseWriter, r *http.Request) {
+		countries := geolocation.GetAvailableCountries()
+		response := map[string]interface{}{
+			"available_countries": countries,
+			"random_country":      geolocation.RandomCountry(),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	})
+
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }
