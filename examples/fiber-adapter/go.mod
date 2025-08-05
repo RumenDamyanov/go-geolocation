@@ -3,7 +3,7 @@ module fiber-example
 go 1.23.6
 
 require (
-	github.com/gofiber/fiber/v2 v2.52.8
+	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/rumendamyanov/go-geolocation v1.0.0
 )
 
