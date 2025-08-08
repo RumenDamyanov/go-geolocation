@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rumendamyanov/go-geolocation"
-	fiberadapter "github.com/rumendamyanov/go-geolocation/adapters/fiber"
+	"go.rumenx.com/geolocation"
+	fiberadapter "go.rumenx.com/geolocation/adapters/fiber"
 )
 
 func main() {

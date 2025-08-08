@@ -10,8 +10,8 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/rumendamyanov/go-geolocation"
-	echoadapter "github.com/rumendamyanov/go-geolocation/adapters/echo"
+	"go.rumenx.com/geolocation"
+	echoadapter "go.rumenx.com/geolocation/adapters/echo"
 )
 
 func main() {

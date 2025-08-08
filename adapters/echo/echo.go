@@ -2,7 +2,7 @@ package echo
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/rumendamyanov/go-geolocation"
+	"go.rumenx.com/geolocation"
 )
 
 // Middleware attaches geolocation info to Echo context.

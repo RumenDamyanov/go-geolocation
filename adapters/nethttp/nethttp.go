@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/rumendamyanov/go-geolocation"
+	"go.rumenx.com/geolocation"
 )
 
 // contextKey is used for storing location in context.
