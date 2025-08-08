@@ -15,7 +15,7 @@ This directory contains complete working examples for integrating go-geolocation
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/rumendamyanov/go-geolocation.git
+git clone https://github.com/RumenDamyanov/go-geolocation.git
 cd go-geolocation
 ```
 

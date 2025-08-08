@@ -32,3 +32,17 @@ vendor/
 coverage/
 coverage.out
 coverage.html
+geolocation.coverprofile
+
+# Legacy/obsolete directories after restructuring
+echoadapter/
+ginadapter/
+fiberadapter/
+
+# In-repo wiki content (use GitHub wiki or update and track explicitly)
+wiki/
+
+# Example build artifacts
+examples/*-adapter/*-example
+examples/*-adapter/example
+examples/**/example

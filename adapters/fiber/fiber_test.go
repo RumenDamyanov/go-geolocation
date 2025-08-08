@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rumendamyanov/go-geolocation"
+	"go.rumenx.com/geolocation"
 )
 
 func TestMiddleware(t *testing.T) {

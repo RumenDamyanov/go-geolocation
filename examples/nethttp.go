@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rumendamyanov/go-geolocation"
-	httpadapter "github.com/rumendamyanov/go-geolocation/adapters/nethttp"
+	"go.rumenx.com/geolocation"
+	httpadapter "go.rumenx.com/geolocation/adapters/nethttp"
 )
 
 func main() {

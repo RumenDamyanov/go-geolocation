@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rumendamyanov/go-geolocation"
+	"go.rumenx.com/geolocation"
 )
 
 func TestHTTPMiddleware(t *testing.T) {

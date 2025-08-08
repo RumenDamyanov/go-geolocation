@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rumendamyanov/go-geolocation"
+	"go.rumenx.com/geolocation"
 )
 
 func main() {

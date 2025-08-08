@@ -2,7 +2,7 @@ package fiber
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/rumendamyanov/go-geolocation"
+	"go.rumenx.com/geolocation"
 )
 
 // Middleware attaches geolocation info to Fiber context.

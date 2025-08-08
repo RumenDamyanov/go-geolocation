@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rumendamyanov/go-geolocation"
-	ginadapter "github.com/rumendamyanov/go-geolocation/adapters/gin"
+	"go.rumenx.com/geolocation"
+	ginadapter "go.rumenx.com/geolocation/adapters/gin"
 )
 
 func main() {

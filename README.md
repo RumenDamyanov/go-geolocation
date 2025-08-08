@@ -4,8 +4,8 @@
 ![CodeQL](https://github.com/rumendamyanov/go-geolocation/actions/workflows/github-code-scanning/codeql/badge.svg)
 ![Dependabot](https://github.com/rumendamyanov/go-geolocation/actions/workflows/dependabot/dependabot-updates/badge.svg)
 [![codecov](https://codecov.io/gh/rumendamyanov/go-geolocation/branch/master/graph/badge.svg)](https://codecov.io/gh/rumendamyanov/go-geolocation)
-[![Go Report Card](https://goreportcard.com/badge/github.com/rumendamyanov/go-geolocation?)](https://goreportcard.com/report/github.com/rumendamyanov/go-geolocation)
-[![Go Reference](https://pkg.go.dev/badge/github.com/rumendamyanov/go-geolocation.svg)](https://pkg.go.dev/github.com/rumendamyanov/go-geolocation)
+[![Go Report Card](https://goreportcard.com/badge/go.rumenx.com/geolocation?)](https://goreportcard.com/report/go.rumenx.com/geolocation)
+[![Go Reference](https://pkg.go.dev/badge/go.rumenx.com/geolocation.svg)](https://pkg.go.dev/go.rumenx.com/geolocation)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/rumendamyanov/go-geolocation/blob/master/LICENSE.md)
 
 A framework-agnostic Go module for geolocation, inspired by [php-geolocation](https://github.com/RumenDamyanov/php-geolocation). Provides core geolocation features and adapters for popular Go web frameworks.
@@ -26,7 +26,7 @@ A framework-agnostic Go module for geolocation, inspired by [php-geolocation](ht
 ## Installation
 
 ```sh
-go get github.com/rumendamyanov/go-geolocation
+go get go.rumenx.com/geolocation
 ```
 
 ## Usage
@@ -34,7 +34,7 @@ go get github.com/rumendamyanov/go-geolocation
 ### Core Usage
 
 ```go
-import "github.com/rumendamyanov/go-geolocation"
+import "go.rumenx.com/geolocation"
 
 // In your handler:
 loc := geolocation.FromRequest(r)
@@ -58,14 +58,14 @@ Ready-to-use examples for popular Go web frameworks are available in the [exampl
 1. **Import Adapter Packages** — For clean middleware integration:
 
 ```go
-go get github.com/rumendamyanov/go-geolocation/adapters/gin    # or echo, fiber, nethttp
+go get go.rumenx.com/geolocation/adapters/gin    # or echo, fiber, nethttp
 ```
 
 1. **Copy Example Applications** — For quick start with full applications:
 
 ```bash
 # Clone and run complete example servers
-git clone https://github.com/rumendamyanov/go-geolocation.git
+git clone https://github.com/RumenDamyanov/go-geolocation.git
 cd go-geolocation/examples/gin-adapter && go run main.go
 ```
 
@@ -73,7 +73,7 @@ cd go-geolocation/examples/gin-adapter && go run main.go
 
 ```bash
 # Clone the repository
-git clone https://github.com/rumendamyanov/go-geolocation.git
+git clone https://github.com/RumenDamyanov/go-geolocation.git
 cd go-geolocation
 
 # Run net/http example (port 8080)
@@ -111,8 +111,8 @@ package main
 
 import (
     "github.com/gin-gonic/gin"
-    "github.com/rumendamyanov/go-geolocation"
-    ginadapter "github.com/rumendamyanov/go-geolocation/adapters/gin"
+    "go.rumenx.com/geolocation"
+    ginadapter "go.rumenx.com/geolocation/adapters/gin"
 )
 
 func main() {
@@ -140,8 +140,8 @@ package main
 
 import (
     "github.com/gin-gonic/gin"
-    "github.com/rumendamyanov/go-geolocation"
-    ginadapter "github.com/rumendamyanov/go-geolocation/adapters/gin"
+    "go.rumenx.com/geolocation"
+    ginadapter "go.rumenx.com/geolocation/adapters/gin"
 )
 
 func main() {
@@ -170,8 +170,8 @@ package main
 
 import (
     "github.com/labstack/echo/v4"
-    "github.com/rumendamyanov/go-geolocation"
-    echoadapter "github.com/rumendamyanov/go-geolocation/adapters/echo"
+    "go.rumenx.com/geolocation"
+    echoadapter "go.rumenx.com/geolocation/adapters/echo"
 )
 
 func main() {
@@ -200,7 +200,7 @@ package main
 
 import (
     "github.com/gofiber/fiber/v2"
-    fiberadapter "github.com/rumendamyanov/go-geolocation/adapters/fiber"
+    fiberadapter "go.rumenx.com/geolocation/adapters/fiber"
 )
 
 func main() {
@@ -230,8 +230,8 @@ package main
 import (
     "encoding/json"
     "net/http"
-    "github.com/rumendamyanov/go-geolocation"
-    httpadapter "github.com/rumendamyanov/go-geolocation/adapters/nethttp"
+    "go.rumenx.com/geolocation"
+    httpadapter "go.rumenx.com/geolocation/adapters/nethttp"
 )
 
 func main() {

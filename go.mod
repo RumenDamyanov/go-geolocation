@@ -1,4 +1,4 @@
-module github.com/rumendamyanov/go-geolocation
+module go.rumenx.com/geolocation
 
 go 1.23.6
 

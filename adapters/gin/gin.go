@@ -2,7 +2,7 @@ package gin
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/rumendamyanov/go-geolocation"
+	"go.rumenx.com/geolocation"
 )
 
 type contextKey struct{}
