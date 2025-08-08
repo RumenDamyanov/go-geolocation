@@ -4,7 +4,7 @@ go 1.23.6
 
 require (
 	github.com/gin-gonic/gin v1.10.1
-	github.com/gofiber/fiber/v2 v2.52.8
+	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/mssola/user_agent v0.6.0
 	gopkg.in/yaml.v3 v3.0.1
