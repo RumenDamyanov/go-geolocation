@@ -1,6 +1,6 @@
 module go.rumenx.com/geolocation
 
-go 1.25.0
+go 1.26.10
 
 require (
 	github.com/gin-gonic/gin v1.12.0
@@ -11,7 +11,7 @@ require (
 )
 
 require (
-	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/andybalholm/brotli v1.2.7 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.0 // indirect
 	github.com/bytedance/sonic/loader v0.5.0 // indirect

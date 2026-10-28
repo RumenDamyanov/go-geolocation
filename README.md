@@ -29,6 +29,8 @@ A framework-agnostic Go module for geolocation, inspired by [php-geolocation](ht
 go get go.rumenx.com/geolocation
 ```
 
+Build with **Go 1.26.10+** or **1.27.3+**. See [SECURITY.md](SECURITY.md).
+
 ## Usage
 
 ### Core Usage
